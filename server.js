@@ -13,7 +13,7 @@ const app = express();
 // Replace with your actual MongoDB Atlas connection string
 const mongoURI = 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/?retryWrites=true&w=majority&appName=ChainSnipe';
 
-mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
