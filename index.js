@@ -10,6 +10,7 @@ let ConsoleLog = console.log;
 const { msg, config, cache, network } = require('./classes/main.js');
 
 console.clear();
+console.log(ethers);
 
 msg.primary('[debug::main] Loading..');
 
