@@ -40,7 +40,7 @@ wsServer.on('connection', (ws) => {
 });
 
 function broadcast(message) {
-  const formattedMessage = message + '\n'; // Add newline after each log entry
+  const formattedMessage = message + '\n'; // Ensure newline after each log entry
   wsClients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
       client.send(formattedMessage);

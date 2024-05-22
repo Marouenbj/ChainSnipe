@@ -53,10 +53,13 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   ws.onmessage = (event) => {
-    const message = event.data;
-    const newMessageElement = document.createElement('div');
-    newMessageElement.textContent = message;
-    outputDiv.appendChild(newMessageElement);
+    const message = event.data.trim(); // Trim to remove trailing newlines
+    const lines = message.split('\n'); // Split the message by newlines
+    lines.forEach(line => {
+      const newMessageElement = document.createElement('div');
+      newMessageElement.textContent = line;
+      outputDiv.appendChild(newMessageElement);
+    });
     outputDiv.scrollTop = outputDiv.scrollHeight;
   };
 
