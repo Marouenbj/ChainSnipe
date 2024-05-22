@@ -5,14 +5,12 @@ document.addEventListener('DOMContentLoaded', () => {
   const stopBotButton = document.getElementById('stopBot');
   const outputDiv = document.getElementById('output');
 
-  // Fetch the current config and populate the textarea
   fetch('/api/config')
     .then(response => response.json())
     .then(data => {
       configTextarea.value = data.config;
     });
 
-  // Save the updated config
   saveConfigButton.addEventListener('click', () => {
     const config = configTextarea.value;
     fetch('/api/config', {
@@ -28,7 +26,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // Start the bot
   startBotButton.addEventListener('click', () => {
     fetch('/api/bot/start', {
       method: 'POST'
@@ -39,7 +36,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // Stop the bot
   stopBotButton.addEventListener('click', () => {
     fetch('/api/bot/stop', {
       method: 'POST'
@@ -50,7 +46,6 @@ document.addEventListener('DOMContentLoaded', () => {
       });
   });
 
-  // WebSocket connection for bot output
   const ws = new WebSocket(`ws://${window.location.host}`);
 
   ws.onopen = () => {

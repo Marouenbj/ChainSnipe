@@ -47,44 +47,45 @@ function broadcast(message) {
   });
 }
 
-// Redirect console output to WebSocket
-function setupConsoleMirroring() {
-  const originalLog = console.log;
-  const originalError = console.error;
+// Override console.log and console.error to capture output
+const originalLog = console.log;
+const originalError = console.error;
 
-  console.log = function (...args) {
-    const message = args.join(' ');
-    broadcast(message);
-    originalLog.apply(console, args);
-  };
+const capturedLogs = [];
 
-  console.error = function (...args) {
-    const message = args.join(' ');
-    broadcast(`ERROR: ${message}`);
-    originalError.apply(console, args);
-  };
-}
+console.log = function (...args) {
+  const message = args.join(' ');
+  capturedLogs.push(message);
+  broadcast(message);
+  originalLog.apply(console, args);
+};
 
-// Bot start and stop functions
+console.error = function (...args) {
+  const message = args.join(' ');
+  capturedLogs.push(`ERROR: ${message}`);
+  broadcast(`ERROR: ${message}`);
+  originalError.apply(console, args);
+};
+
+// Function to start the original bot process and capture its output
 function startBot() {
   if (botProcess) return;
+
   botProcess = exec('node index.js');
+
   botProcess.stdout.on('data', (data) => {
-    console.log(data.toString());
+    console.log(data.toString().trim());
   });
+
   botProcess.stderr.on('data', (data) => {
-    console.error(data.toString());
+    console.error(data.toString().trim());
   });
+
   botProcess.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
+    console.log('Captured Logs:', capturedLogs.join('\n'));
     botProcess = null;
   });
-}
-
-function stopBot() {
-  if (!botProcess) return;
-  botProcess.kill();
-  botProcess = null;
 }
 
 // Bot control routes
@@ -92,7 +93,6 @@ app.post('/api/bot/start', (req, res) => {
   if (botProcess) {
     return res.status(400).send('Bot is already running');
   }
-  setupConsoleMirroring();
   startBot();
   res.send('Bot started');
 });
@@ -101,6 +101,7 @@ app.post('/api/bot/stop', (req, res) => {
   if (!botProcess) {
     return res.status(400).send('Bot is not running');
   }
-  stopBot();
+  botProcess.kill();
+  botProcess = null;
   res.send('Bot stopped');
 });
