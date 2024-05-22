@@ -31,8 +31,11 @@ wsServer = new WebSocket.Server({ server });
 
 wsServer.on('connection', (ws) => {
   wsClients.push(ws);
+  console.log('New WebSocket connection established.');
+
   ws.on('close', () => {
     wsClients = wsClients.filter((client) => client !== ws);
+    console.log('WebSocket connection closed.');
   });
 });
 

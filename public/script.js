@@ -53,11 +53,23 @@ document.addEventListener('DOMContentLoaded', () => {
   // WebSocket connection for bot output
   const ws = new WebSocket(`ws://${window.location.host}`);
 
+  ws.onopen = () => {
+    console.log('WebSocket connection opened.');
+  };
+
   ws.onmessage = (event) => {
     const message = event.data;
     const newMessageElement = document.createElement('div');
     newMessageElement.textContent = message;
     outputDiv.appendChild(newMessageElement);
     outputDiv.scrollTop = outputDiv.scrollHeight;
+  };
+
+  ws.onclose = () => {
+    console.log('WebSocket connection closed.');
+  };
+
+  ws.onerror = (error) => {
+    console.error('WebSocket error:', error);
   };
 });
