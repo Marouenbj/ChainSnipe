@@ -11,7 +11,7 @@ const User = require('./models/User'); // Adjust the path if necessary
 const app = express();
 
 // Replace with your actual MongoDB Atlas connection string
-const mongoURI = 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
+const mongoURI = 'mongodb+srv://<username>:<password>@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
 
 mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
@@ -22,6 +22,7 @@ passport.use(new LocalStrategy(async (username, password, done) => {
   try {
     console.log(`Authenticating user: ${username}`);
     const user = await User.findOne({ username: username });
+    console.log(`User found: ${user}`); // Log the user object
     if (!user) {
       console.log('User not found');
       return done(null, false, { message: 'Incorrect username.' });
@@ -31,7 +32,7 @@ passport.use(new LocalStrategy(async (username, password, done) => {
       return done(null, false, { message: 'Incorrect password.' });
     }
     console.log('User authenticated successfully');
-    return done(null, user);
+    return done(null, user); // Ensure the user object is passed correctly
   } catch (err) {
     console.log(`Authentication error: ${err}`);
     return done(err);
@@ -39,8 +40,8 @@ passport.use(new LocalStrategy(async (username, password, done) => {
 }));
 
 passport.serializeUser((user, done) => {
-  console.log(`Serializing user: ${user._id}`);
-  done(null, user._id); // Assuming user has an _id field
+  console.log(`Serializing user: ${user}`); // Log the user object being serialized
+  done(null, user._id); // Ensure the user._id field is passed
 });
 
 passport.deserializeUser(async (id, done) => {
