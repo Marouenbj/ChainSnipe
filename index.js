@@ -47,7 +47,7 @@ process.on('uncaughtException', (err, origin) => {
 
 
 
-    msg.primary('[debug::main] Eryx Lite has been started.');
+    msg.primary('[debug::main] ChainSnipe v1 has been started.');
 
 	// balance check
     if(network.bnb_balance == 0) {
