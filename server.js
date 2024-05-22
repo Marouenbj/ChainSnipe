@@ -11,7 +11,7 @@ const User = require('./models/User'); // Adjust the path if necessary
 const app = express();
 
 // Replace with your actual MongoDB Atlas connection string
-const mongoURI = 'mongodb+srv://<username>:<password>@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
+const mongoURI = 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
 
 mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
