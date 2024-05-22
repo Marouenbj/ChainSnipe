@@ -40,9 +40,10 @@ wsServer.on('connection', (ws) => {
 });
 
 function broadcast(message) {
+  const formattedMessage = message + '\n'; // Add newline after each log entry
   wsClients.forEach((client) => {
     if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
+      client.send(formattedMessage);
     }
   });
 }
@@ -51,18 +52,14 @@ function broadcast(message) {
 const originalLog = console.log;
 const originalError = console.error;
 
-const capturedLogs = [];
-
 console.log = function (...args) {
   const message = args.join(' ');
-  capturedLogs.push(message);
   broadcast(message);
   originalLog.apply(console, args);
 };
 
 console.error = function (...args) {
   const message = args.join(' ');
-  capturedLogs.push(`ERROR: ${message}`);
   broadcast(`ERROR: ${message}`);
   originalError.apply(console, args);
 };
@@ -73,17 +70,8 @@ function startBot() {
 
   botProcess = exec('node index.js');
 
-  botProcess.stdout.on('data', (data) => {
-    console.log(data.toString().trim());
-  });
-
-  botProcess.stderr.on('data', (data) => {
-    console.error(data.toString().trim());
-  });
-
   botProcess.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
-    console.log('Captured Logs:', capturedLogs.join('\n'));
     botProcess = null;
   });
 }
