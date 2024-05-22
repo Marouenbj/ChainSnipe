@@ -44,15 +44,37 @@ function broadcast(message) {
   });
 }
 
+// Redirect console output to WebSocket
+function setupConsoleMirroring() {
+  const originalLog = console.log;
+  const originalError = console.error;
+
+  console.log = function (...args) {
+    const message = args.join(' ');
+    broadcast(message);
+    originalLog.apply(console, args);
+  };
+
+  console.error = function (...args) {
+    const message = args.join(' ');
+    broadcast(`ERROR: ${message}`);
+    originalError.apply(console, args);
+  };
+}
+
 // Bot start and stop functions
 function startBot() {
   if (botProcess) return;
   botProcess = exec('node index.js');
   botProcess.stdout.on('data', (data) => {
-    broadcast(data.toString());
+    console.log(data.toString());
   });
   botProcess.stderr.on('data', (data) => {
-    broadcast(`ERROR: ${data.toString()}`);
+    console.error(data.toString());
+  });
+  botProcess.on('close', (code) => {
+    console.log(`child process exited with code ${code}`);
+    botProcess = null;
   });
 }
 
@@ -67,6 +89,7 @@ app.post('/api/bot/start', (req, res) => {
   if (botProcess) {
     return res.status(400).send('Bot is already running');
   }
+  setupConsoleMirroring();
   startBot();
   res.send('Bot started');
 });
