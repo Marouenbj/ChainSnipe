@@ -11,30 +11,39 @@ const User = require('./models/User'); // Adjust the path if necessary
 const app = express();
 
 // Replace with your actual MongoDB Atlas connection string
-const mongoURI = 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/?retryWrites=true&w=majority&appName=ChainSnipe';
+const mongoURI = 'mongodb+srv://<username>:<password>@cluster0.mongodb.net/yourdb?retryWrites=true&w=majority';
 
 mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
 
 // Passport.js configuration
-passport.use(new LocalStrategy((username, password, done) => {
-  User.findOne({ username: username }, (err, user) => {
-    if (err) return done(err);
-    if (!user) return done(null, false, { message: 'Incorrect username.' });
-    if (user.password !== password) return done(null, false, { message: 'Incorrect password.' });
+passport.use(new LocalStrategy(async (username, password, done) => {
+  try {
+    const user = await User.findOne({ username: username });
+    if (!user) {
+      return done(null, false, { message: 'Incorrect username.' });
+    }
+    if (user.password !== password) {
+      return done(null, false, { message: 'Incorrect password.' });
+    }
     return done(null, user);
-  });
+  } catch (err) {
+    return done(err);
+  }
 }));
 
 passport.serializeUser((user, done) => {
   done(null, user.id);
 });
 
-passport.deserializeUser((id, done) => {
-  User.findById(id, (err, user) => {
-    done(err, user);
-  });
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
 });
 
 // Middleware
@@ -43,6 +52,15 @@ app.use(express.urlencoded({ extended: false }));
 app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
 app.use(passport.initialize());
 app.use(passport.session());
+
+// Debugging Middleware
+app.use((req, res, next) => {
+  console.log(`Request URL: ${req.url}`);
+  console.log(`Request Method: ${req.method}`);
+  console.log(`Session: ${JSON.stringify(req.session)}`);
+  console.log(`User: ${JSON.stringify(req.user)}`);
+  next();
+});
 
 // Serve static files from the "public" directory
 app.use(express.static('public'));
