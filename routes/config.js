@@ -1,27 +1,43 @@
 const express = require('express');
-const fs = require('fs');
 const router = express.Router();
-const configFilePath = './config.ini';
+const BotConfig = require('../models/BotConfig'); // Adjust the path if necessary
 
-// Endpoint to get the current config
-router.get('/', (req, res) => {
-  fs.readFile(configFilePath, 'utf8', (err, data) => {
-    if (err) {
-      return res.status(500).send('Error reading config file');
+// Middleware to ensure the user is authenticated
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).send('Unauthorized');
+}
+
+// Get user-specific configuration
+router.get('/', ensureAuthenticated, async (req, res) => {
+  try {
+    const config = await BotConfig.findOne({ userId: req.user._id });
+    if (config) {
+      res.json({ config: config.config });
+    } else {
+      res.json({ config: '' });
     }
-    res.json({ config: data });
-  });
+  } catch (err) {
+    res.status(500).send('Server error');
+  }
 });
 
-// Endpoint to update the config
-router.post('/', (req, res) => {
-  const newConfig = req.body.config;
-  fs.writeFile(configFilePath, newConfig, 'utf8', (err) => {
-    if (err) {
-      return res.status(500).send('Error writing config file');
+// Save user-specific configuration
+router.post('/', ensureAuthenticated, async (req, res) => {
+  try {
+    let config = await BotConfig.findOne({ userId: req.user._id });
+    if (config) {
+      config.config = req.body.config;
+    } else {
+      config = new BotConfig({ userId: req.user._id, config: req.body.config });
     }
-    res.send('Config updated successfully');
-  });
+    await config.save();
+    res.send('Configuration saved');
+  } catch (err) {
+    res.status(500).send('Server error');
+  }
 });
 
 module.exports = router;

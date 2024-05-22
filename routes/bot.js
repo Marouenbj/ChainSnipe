@@ -1,26 +1,34 @@
 const express = require('express');
-const { exec } = require('child_process');
 const router = express.Router();
+const { exec } = require('child_process');
 let botProcess;
 
-// Endpoint to start the bot
-router.post('/start', (req, res) => {
+// Middleware to ensure the user is authenticated
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).send('Unauthorized');
+}
+
+// Start the bot process
+router.post('/start', ensureAuthenticated, (req, res) => {
   if (botProcess) {
     return res.status(400).send('Bot is already running');
   }
-  botProcess = exec('node index.js', (error, stdout, stderr) => {
-    if (error) {
-      console.error(`exec error: ${error}`);
-      return;
-    }
-    console.log(`stdout: ${stdout}`);
-    console.error(`stderr: ${stderr}`);
+
+  botProcess = exec('node index.js');
+
+  botProcess.on('close', (code) => {
+    console.log(`child process exited with code ${code}`);
+    botProcess = null;
   });
+
   res.send('Bot started');
 });
 
-// Endpoint to stop the bot
-router.post('/stop', (req, res) => {
+// Stop the bot process
+router.post('/stop', ensureAuthenticated, (req, res) => {
   if (!botProcess) {
     return res.status(400).send('Bot is not running');
   }

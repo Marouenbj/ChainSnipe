@@ -2,13 +2,47 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const { exec } = require('child_process');
 const WebSocket = require('ws');
-const app = express();
-const configRoutes = require('./routes/config');
-const botRoutes = require('./routes/bot');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const session = require('express-session');
+const mongoose = require('mongoose');
+const User = require('./models/User'); // Adjust the path if necessary
 
-let botProcess;
-let wsServer;
-let wsClients = [];
+const app = express();
+
+// Replace with your actual MongoDB Atlas connection string
+const mongoURI = 'mongodb+srv://admin:<password>@chainsnipe.xp3wetj.mongodb.net/?retryWrites=true&w=majority&appName=ChainSnipe';
+
+mongoose.connect(mongoURI, { useNewUrlParser: true, useUnifiedTopology: true })
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
+
+// Passport.js configuration
+passport.use(new LocalStrategy((username, password, done) => {
+  User.findOne({ username: username }, (err, user) => {
+    if (err) return done(err);
+    if (!user) return done(null, false, { message: 'Incorrect username.' });
+    if (user.password !== password) return done(null, false, { message: 'Incorrect password.' });
+    return done(null, user);
+  });
+}));
+
+passport.serializeUser((user, done) => {
+  done(null, user.id);
+});
+
+passport.deserializeUser((id, done) => {
+  User.findById(id, (err, user) => {
+    done(err, user);
+  });
+});
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Serve static files from the "public" directory
 app.use(express.static('public'));
@@ -17,8 +51,31 @@ app.use(express.static('public'));
 app.use(bodyParser.json());
 
 // Set up routes for API endpoints
+const configRoutes = require('./routes/config');
+const botRoutes = require('./routes/bot');
 app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
+
+// Authentication Routes
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/dashboard',
+  failureRedirect: '/login'
+}));
+
+app.get('/dashboard', ensureAuthenticated, (req, res) => {
+  res.send('Welcome to your dashboard!');
+});
+
+app.get('/login', (req, res) => {
+  res.send('Login page');
+});
+
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/login');
+}
 
 // Start the server on port 3000
 const PORT = 3000;
@@ -27,6 +84,10 @@ const server = app.listen(PORT, () => {
 });
 
 // Set up WebSocket server
+let botProcess;
+let wsServer;
+let wsClients = [];
+
 wsServer = new WebSocket.Server({ server });
 
 wsServer.on('connection', (ws) => {
@@ -77,7 +138,7 @@ function startBot() {
 }
 
 // Bot control routes
-app.post('/api/bot/start', (req, res) => {
+app.post('/api/bot/start', ensureAuthenticated, (req, res) => {
   if (botProcess) {
     return res.status(400).send('Bot is already running');
   }
@@ -85,7 +146,7 @@ app.post('/api/bot/start', (req, res) => {
   res.send('Bot started');
 });
 
-app.post('/api/bot/stop', (req, res) => {
+app.post('/api/bot/stop', ensureAuthenticated, (req, res) => {
   if (!botProcess) {
     return res.status(400).send('Bot is not running');
   }
