@@ -35,7 +35,7 @@ app.use(passport.session());
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
     console.log(`Authenticating user: ${username}`);
-    const user = await User.findOne({ username: username });
+    const user = await User.findOne({ username });
     console.log(`User found: ${user}`); // Log the user object
     if (!user) {
       console.log('User not found');
@@ -46,7 +46,7 @@ passport.use(new LocalStrategy(async (username, password, done) => {
       return done(null, false, { message: 'Incorrect password.' });
     }
     console.log('User authenticated successfully');
-    return done(null, user); // Ensure the user object is passed correctly
+    return done(null, user);
   } catch (err) {
     console.log(`Authentication error: ${err}`);
     return done(err);
@@ -55,7 +55,7 @@ passport.use(new LocalStrategy(async (username, password, done) => {
 
 passport.serializeUser((user, done) => {
   console.log(`Serializing user: ${user._id}`);
-  done(null, user._id); // Assuming user has an _id field
+  done(null, user._id);
 });
 
 passport.deserializeUser(async (id, done) => {
@@ -90,10 +90,17 @@ app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 
 // Authentication Routes
-app.post('/login', passport.authenticate('local', {
-  successRedirect: '/dashboard',
-  failureRedirect: '/login'
-}));
+app.post('/login', (req, res, next) => {
+  passport.authenticate('local', (err, user, info) => {
+    if (err) return next(err);
+    if (!user) return res.redirect('/login');
+    req.logIn(user, (err) => {
+      if (err) return next(err);
+      console.log(`Session after login: ${JSON.stringify(req.session)}`);
+      return res.redirect('/dashboard');
+    });
+  })(req, res, next);
+});
 
 app.get('/dashboard', ensureAuthenticated, (req, res) => {
   res.send('Welcome to your dashboard!');
