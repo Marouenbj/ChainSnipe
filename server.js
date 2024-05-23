@@ -6,18 +6,18 @@ const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
 const RedisStore = require('connect-redis').default;
-const redis = require('redis');
+const Redis = require('ioredis');
 const mongoose = require('mongoose');
 const User = require('./models/User'); // Adjust the path if necessary
 
 const app = express();
 
-// Create a Redis client using environment variables
-const redisClient = redis.createClient({
+// Create a Redis client using ioredis
+const redisClient = new Redis({
   host: process.env.REDIS_HOST || 'localhost',
   port: process.env.REDIS_PORT || 6379,
-  retry_strategy: options => {
-    return Math.max(options.attempt * 100, 3000);
+  retryStrategy(times) {
+    return Math.min(times * 50, 2000);
   }
 });
 
