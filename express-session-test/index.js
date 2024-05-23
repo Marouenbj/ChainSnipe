@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 const app = express();
 
 // MongoDB connection string
-const mongoURI = 'mongodb+srv://<username>:<password>@<your-mongo-host>/<your-database>?retryWrites=true&w=majority';
+const mongoURI = 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)
