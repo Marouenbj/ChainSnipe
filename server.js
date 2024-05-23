@@ -28,7 +28,10 @@ app.use(session({
 }));
 
 app.use((req, res, next) => {
-  console.log(`Session Middleware Initialized`);
+  console.log(`Request URL: ${req.url}`);
+  console.log(`Request Method: ${req.method}`);
+  console.log(`Session: ${JSON.stringify(req.session)}`);
+  console.log(`User: ${JSON.stringify(req.user)}`);
   next();
 });
 
@@ -40,7 +43,7 @@ app.use(passport.session());
 passport.use(new LocalStrategy(async (username, password, done) => {
   try {
     console.log(`Authenticating user: ${username}`);
-    const user = await User.findOne({ username });
+    const user = await User.findOne({ username: username });
     console.log(`User found: ${user}`); // Log the user object
     if (!user) {
       console.log('User not found');
@@ -73,15 +76,6 @@ passport.deserializeUser(async (id, done) => {
   }
 });
 
-// Debugging Middleware
-app.use((req, res, next) => {
-  console.log(`Request URL: ${req.url}`);
-  console.log(`Request Method: ${req.method}`);
-  console.log(`Session: ${JSON.stringify(req.session)}`);
-  console.log(`User: ${JSON.stringify(req.user)}`);
-  next();
-});
-
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 
@@ -95,20 +89,10 @@ app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 
 // Authentication Routes
-app.post('/login', (req, res, next) => {
-  passport.authenticate('local', (err, user, info) => {
-    if (err) return next(err);
-    if (!user) {
-      console.log('Authentication failed, redirecting to login');
-      return res.redirect('/login');
-    }
-    req.logIn(user, (err) => {
-      if (err) return next(err);
-      console.log(`Session after login: ${JSON.stringify(req.session)}`);
-      return res.redirect('/dashboard');
-    });
-  })(req, res, next);
-});
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/dashboard',
+  failureRedirect: '/login'
+}));
 
 app.get('/dashboard', ensureAuthenticated, (req, res) => {
   res.send('Welcome to your dashboard!');
