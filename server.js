@@ -5,33 +5,22 @@ const WebSocket = require('ws');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
-const RedisStore = require('connect-redis').default;
-const Redis = require('ioredis');
+const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
 const User = require('./models/User'); // Adjust the path if necessary
 
 const app = express();
 
-// Create a Redis client using ioredis
-const redisClient = new Redis({
-  host: process.env.REDIS_HOST || 'localhost',
-  port: process.env.REDIS_PORT || 6379,
-  retryStrategy(times) {
-    return Math.min(times * 50, 2000);
-  }
-});
+// MongoDB connection string
+const mongoURI = process.env.MONGO_URI || 'mongodb+srv://<username>:<password>@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
 
-redisClient.on('error', (err) => {
-  console.error('Redis error: ', err);
-});
+mongoose.connect(mongoURI)
+  .then(() => console.log('MongoDB connected'))
+  .catch(err => console.error('MongoDB connection error:', err));
 
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-
-// Use Redis to store sessions
+// Use MongoDB to store sessions
 app.use(session({
-  store: new RedisStore({ client: redisClient }),
+  store: MongoStore.create({ mongoUrl: mongoURI }),
   secret: 'your-secret-key',
   resave: false,
   saveUninitialized: false,
@@ -41,13 +30,6 @@ app.use(session({
 // Initialize Passport and manage sessions
 app.use(passport.initialize());
 app.use(passport.session());
-
-// MongoDB connection string
-const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/test';
-
-mongoose.connect(mongoURI)
-  .then(() => console.log('MongoDB connected'))
-  .catch(err => console.error('MongoDB connection error:', err));
 
 // Passport.js configuration
 passport.use(new LocalStrategy(async (username, password, done) => {
