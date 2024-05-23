@@ -5,15 +5,25 @@ const WebSocket = require('ws');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
-const RedisStore = require('connect-redis').default;  // Use .default for ES6 modules
+const RedisStore = require('connect-redis').default;
 const redis = require('redis');
 const mongoose = require('mongoose');
 const User = require('./models/User'); // Adjust the path if necessary
 
 const app = express();
 
-// Create a Redis client
-const redisClient = redis.createClient();
+// Create a Redis client using environment variables
+const redisClient = redis.createClient({
+  host: process.env.REDIS_HOST || 'localhost',
+  port: process.env.REDIS_PORT || 6379,
+  retry_strategy: options => {
+    return Math.max(options.attempt * 100, 3000);
+  }
+});
+
+redisClient.on('error', (err) => {
+  console.error('Redis error: ', err);
+});
 
 // Middleware
 app.use(express.json());
@@ -33,7 +43,7 @@ app.use(passport.initialize());
 app.use(passport.session());
 
 // MongoDB connection string
-const mongoURI = 'mongodb+srv://<username>:<password>@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
+const mongoURI = process.env.MONGO_URI || 'mongodb://localhost:27017/test';
 
 mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
