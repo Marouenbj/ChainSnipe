@@ -5,13 +5,35 @@ const WebSocket = require('ws');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
+const RedisStore = require('connect-redis')(session);
+const redis = require('redis');
 const mongoose = require('mongoose');
 const User = require('./models/User'); // Adjust the path if necessary
 
 const app = express();
 
-// Replace with your actual MongoDB Atlas connection string
-const mongoURI = 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
+// Create a Redis client
+const redisClient = redis.createClient();
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+
+// Use Redis to store sessions
+app.use(session({
+  store: new RedisStore({ client: redisClient }),
+  secret: 'your-secret-key',
+  resave: false,
+  saveUninitialized: false,
+  cookie: { secure: false } // Set to true if using HTTPS
+}));
+
+// Initialize Passport and manage sessions
+app.use(passport.initialize());
+app.use(passport.session());
+
+// MongoDB connection string
+const mongoURI = 'mongodb+srv://<username>:<password>@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
 
 mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
@@ -40,8 +62,8 @@ passport.use(new LocalStrategy(async (username, password, done) => {
 }));
 
 passport.serializeUser((user, done) => {
-  console.log(`Serializing user: ${user}`); // Log the user object being serialized
-  done(null, user._id); // Ensure the user._id field is passed
+  console.log(`Serializing user: ${user._id}`);
+  done(null, user._id); // Assuming user has an _id field
 });
 
 passport.deserializeUser(async (id, done) => {
@@ -53,13 +75,6 @@ passport.deserializeUser(async (id, done) => {
     done(err);
   }
 });
-
-// Middleware
-app.use(express.json());
-app.use(express.urlencoded({ extended: false }));
-app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Debugging Middleware
 app.use((req, res, next) => {
