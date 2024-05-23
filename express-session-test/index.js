@@ -1,12 +1,16 @@
 const express = require('express');
+const bodyParser = require('body-parser');
 const session = require('express-session');
 const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
+const passport = require('passport');
+const LocalStrategy = require('passport-local').Strategy;
+const User = require('./models/User'); // Adjust the path if necessary
 
 const app = express();
 
 // MongoDB connection string
-const mongoURI = 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
+const mongoURI = 'mongodb+srv://<username>:<password>@<your-mongo-host>/<your-database>?retryWrites=true&w=majority';
 
 // Connect to MongoDB
 mongoose.connect(mongoURI)
@@ -22,23 +26,72 @@ app.use(session({
   cookie: { secure: false } // Set to true if using HTTPS
 }));
 
+// Initialize Passport
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Passport Local Strategy
+passport.use(new LocalStrategy(async (username, password, done) => {
+  try {
+    const user = await User.findOne({ username });
+    if (!user) {
+      console.log('User not found');
+      return done(null, false, { message: 'Incorrect username.' });
+    }
+    if (user.password !== password) {
+      console.log('Incorrect password');
+      return done(null, false, { message: 'Incorrect password.' });
+    }
+    return done(null, user);
+  } catch (err) {
+    return done(err);
+  }
+}));
+
+passport.serializeUser((user, done) => {
+  done(null, user._id);
+});
+
+passport.deserializeUser(async (id, done) => {
+  try {
+    const user = await User.findById(id);
+    done(null, user);
+  } catch (err) {
+    done(err);
+  }
+});
+
 // Middleware to log session details
 app.use((req, res, next) => {
   console.log(`Session ID: ${req.sessionID}`);
   console.log(`Session: ${JSON.stringify(req.session)}`);
+  console.log(`User: ${JSON.stringify(req.user)}`);
   next();
 });
 
-// Simple route to test session storage
-app.get('/', (req, res) => {
-  if (req.session.views) {
-    req.session.views++;
-    res.send(`<p>Views: ${req.session.views}</p>`);
-  } else {
-    req.session.views = 1;
-    res.send('Welcome to the session demo. Refresh!');
-  }
+// Body-parser middleware
+app.use(bodyParser.json());
+
+// Authentication Routes
+app.post('/login', passport.authenticate('local', {
+  successRedirect: '/dashboard',
+  failureRedirect: '/login'
+}));
+
+app.get('/dashboard', ensureAuthenticated, (req, res) => {
+  res.send('Welcome to your dashboard!');
 });
+
+app.get('/login', (req, res) => {
+  res.send('Login page');
+});
+
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.redirect('/login');
+}
 
 // Start the server on port 3000
 const PORT = 3000;
