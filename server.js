@@ -27,6 +27,11 @@ app.use(session({
   cookie: { secure: false } // Set to true if using HTTPS
 }));
 
+app.use((req, res, next) => {
+  console.log(`Session Middleware Initialized`);
+  next();
+});
+
 // Initialize Passport and manage sessions
 app.use(passport.initialize());
 app.use(passport.session());
@@ -93,7 +98,10 @@ app.use('/api/bot', botRoutes);
 app.post('/login', (req, res, next) => {
   passport.authenticate('local', (err, user, info) => {
     if (err) return next(err);
-    if (!user) return res.redirect('/login');
+    if (!user) {
+      console.log('Authentication failed, redirecting to login');
+      return res.redirect('/login');
+    }
     req.logIn(user, (err) => {
       if (err) return next(err);
       console.log(`Session after login: ${JSON.stringify(req.session)}`);
