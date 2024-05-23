@@ -5,39 +5,21 @@ const WebSocket = require('ws');
 const passport = require('passport');
 const LocalStrategy = require('passport-local').Strategy;
 const session = require('express-session');
-const MongoStore = require('connect-mongo');
 const mongoose = require('mongoose');
 const User = require('./models/User'); // Adjust the path if necessary
 
 const app = express();
 
-// MongoDB connection string
-const mongoURI = process.env.MONGO_URI || 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
+// Replace with your actual MongoDB Atlas connection string
+const mongoURI = 'mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
+
+
+
+
 
 mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
   .catch(err => console.error('MongoDB connection error:', err));
-
-// Use MongoDB to store sessions
-app.use(session({
-  store: MongoStore.create({ mongoUrl: mongoURI }),
-  secret: 'your-secret-key',
-  resave: false,
-  saveUninitialized: false,
-  cookie: { secure: false } // Set to true if using HTTPS
-}));
-
-app.use((req, res, next) => {
-  console.log(`Request URL: ${req.url}`);
-  console.log(`Request Method: ${req.method}`);
-  console.log(`Session: ${JSON.stringify(req.session)}`);
-  console.log(`User: ${JSON.stringify(req.user)}`);
-  next();
-});
-
-// Initialize Passport and manage sessions
-app.use(passport.initialize());
-app.use(passport.session());
 
 // Passport.js configuration
 passport.use(new LocalStrategy(async (username, password, done) => {
@@ -54,7 +36,7 @@ passport.use(new LocalStrategy(async (username, password, done) => {
       return done(null, false, { message: 'Incorrect password.' });
     }
     console.log('User authenticated successfully');
-    return done(null, user);
+    return done(null, user); // Ensure the user object is passed correctly
   } catch (err) {
     console.log(`Authentication error: ${err}`);
     return done(err);
@@ -62,8 +44,8 @@ passport.use(new LocalStrategy(async (username, password, done) => {
 }));
 
 passport.serializeUser((user, done) => {
-  console.log(`Serializing user: ${user._id}`);
-  done(null, user._id);
+  console.log(`Serializing user: ${user}`); // Log the user object being serialized
+  done(null, user._id); // Ensure the user._id field is passed
 });
 
 passport.deserializeUser(async (id, done) => {
@@ -74,6 +56,22 @@ passport.deserializeUser(async (id, done) => {
   } catch (err) {
     done(err);
   }
+});
+
+// Middleware
+app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
+app.use(session({ secret: 'secret', resave: false, saveUninitialized: false }));
+app.use(passport.initialize());
+app.use(passport.session());
+
+// Debugging Middleware
+app.use((req, res, next) => {
+  console.log(`Request URL: ${req.url}`);
+  console.log(`Request Method: ${req.method}`);
+  console.log(`Session: ${JSON.stringify(req.session)}`);
+  console.log(`User: ${JSON.stringify(req.user)}`);
+  next();
 });
 
 // Serve static files from the "public" directory
@@ -122,67 +120,3 @@ let wsClients = [];
 
 wsServer = new WebSocket.Server({ server });
 
-wsServer.on('connection', (ws) => {
-  wsClients.push(ws);
-  console.log('New WebSocket connection established.');
-
-  ws.on('close', () => {
-    wsClients = wsClients.filter((client) => client !== ws);
-    console.log('WebSocket connection closed.');
-  });
-});
-
-function broadcast(message) {
-  const formattedMessage = message + '\n'; // Ensure newline after each log entry
-  wsClients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(formattedMessage);
-    }
-  });
-}
-
-// Override console.log and console.error to capture output
-const originalLog = console.log;
-const originalError = console.error;
-
-console.log = function (...args) {
-  const message = args.join(' ');
-  broadcast(message);
-  originalLog.apply(console, args);
-};
-
-console.error = function (...args) {
-  const message = args.join(' ');
-  broadcast(`ERROR: ${message}`);
-  originalError.apply(console, args);
-};
-
-// Function to start the original bot process and capture its output
-function startBot() {
-  if (botProcess) return;
-
-  botProcess = exec('node index.js');
-
-  botProcess.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
-    botProcess = null;
-  });
-}
-
-// Bot control routes
-app.post('/api/bot/start', ensureAuthenticated, (req, res) => {
-  if (botProcess) {
-    return res.status(400).send('Bot is already running');
-  }
-  startBot();
-  res.send('Bot started');
-});
-
-app.post('/api/bot/stop', ensureAuthenticated, (req, res) => {
-  if (!botProcess) {
-    return res.status(400).send('Bot is not running');
-  }
-  botProcess.kill();
-  botProcess = null;
-  res.send('Bot stopped');
-});
