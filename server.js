@@ -12,7 +12,7 @@ const User = require('./models/User'); // Adjust the path if necessary
 const app = express();
 
 // MongoDB connection string
-const mongoURI = process.env.MONGO_URI || 'mongodb+srv://<username>:<password>@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe';
+const mongoURI = process.env.MONGO_URI || 'mongodb+srv://admin:<password>@chainsnipe.xp3wetj.mongodb.net/?retryWrites=true&w=majority&appName=ChainSnipe';
 
 mongoose.connect(mongoURI)
   .then(() => console.log('MongoDB connected'))
