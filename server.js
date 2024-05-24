@@ -53,41 +53,64 @@ app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/auth', authRoutes);
 
-// WebSocket connection handling
-wss.on('connection', (ws, req) => {
-  const sessionID = req.headers['sec-websocket-protocol'];
-
-  if (!clients[sessionID]) {
-    clients[sessionID] = [];
-  }
-  clients[sessionID].push(ws);
-
-  console.log(`New client connected: ${sessionID}`);
-
-  ws.on('message', (message) => {
-    console.log(`Received message: ${message}`);
-    // Broadcast to all clients associated with the session
-    clients[sessionID].forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message);
-      }
+// Extract user ID from the WebSocket upgrade request
+function getUserIdFromRequest(req) {
+  const cookies = req.headers.cookie.split(';').map(cookie => cookie.trim());
+  const sessionCookie = cookies.find(cookie => cookie.startsWith('connect.sid='));
+  if (sessionCookie) {
+    const sessionId = sessionCookie.split('=')[1].split('.')[0].substring(2);
+    return new Promise((resolve, reject) => {
+      sessionMiddleware(req, {}, () => {
+        passport.deserializeUser(sessionId, (err, user) => {
+          if (err || !user) {
+            return reject(err || 'User not found');
+          }
+          resolve(user._id);
+        });
+      });
     });
-  });
+  }
+  return Promise.reject('No session cookie found');
+}
 
-  ws.on('close', () => {
-    console.log(`Client disconnected: ${sessionID}`);
-    clients[sessionID] = clients[sessionID].filter((client) => client !== ws);
-  });
+// WebSocket connection handling
+wss.on('connection', async (ws, req) => {
+  try {
+    const userId = await getUserIdFromRequest(req);
+    if (!clients[userId]) {
+      clients[userId] = [];
+    }
+    clients[userId].push(ws);
+    console.log(`New client connected: ${userId}`);
 
-  ws.on('error', (error) => {
-    console.error(`WebSocket error: ${error.message}`);
-  });
+    ws.on('message', (message) => {
+      console.log(`Received message from ${userId}: ${message}`);
+      // Broadcast to all clients associated with the user
+      clients[userId].forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    });
+
+    ws.on('close', () => {
+      console.log(`Client disconnected: ${userId}`);
+      clients[userId] = clients[userId].filter((client) => client !== ws);
+    });
+
+    ws.on('error', (error) => {
+      console.error(`WebSocket error for ${userId}: ${error.message}`);
+    });
+  } catch (err) {
+    console.error(`WebSocket connection failed: ${err}`);
+    ws.close();
+  }
 });
 
-// Function to broadcast a message to all WebSocket clients associated with a session
-function broadcastMessage(sessionID, message) {
-  if (clients[sessionID]) {
-    clients[sessionID].forEach((client) => {
+// Function to broadcast a message to all WebSocket clients associated with a user
+function broadcastMessage(userId, message) {
+  if (clients[userId]) {
+    clients[userId].forEach((client) => {
       if (client.readyState === WebSocket.OPEN) {
         client.send(message);
       }
@@ -98,16 +121,18 @@ function broadcastMessage(sessionID, message) {
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
   req.session.views = (req.session.views || 0) + 1;
-  broadcastMessage(req.sessionID, `Session views: ${req.session.views}`);
+  const userId = req.session.passport.user;
+  broadcastMessage(userId, `Session views: ${req.session.views}`);
   res.send(`Session views: ${req.session.views}`);
 });
 
 app.get('/get-session', (req, res) => {
+  const userId = req.session.passport.user;
   if (req.session.views) {
-    broadcastMessage(req.sessionID, `Session views: ${req.session.views}`);
+    broadcastMessage(userId, `Session views: ${req.session.views}`);
     res.send(`Session views: ${req.session.views}`);
   } else {
-    broadcastMessage(req.sessionID, 'No session data found');
+    broadcastMessage(userId, 'No session data found');
     res.send('No session data found');
   }
 });
