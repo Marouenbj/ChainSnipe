@@ -9,12 +9,14 @@ const configRoutes = require('./routes/config');
 const botRoutes = require('./routes/bot');
 const authRoutes = require('./routes/auth');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const session = require('express-session');
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
 
-let clients = [];
+let clients = {};
 
 // Connect to MongoDB
 connectDB();
@@ -22,6 +24,7 @@ connectDB();
 // Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
+app.use(cookieParser());
 app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
@@ -51,23 +54,29 @@ app.use('/api/bot', botRoutes);
 app.use('/auth', authRoutes);
 
 // WebSocket connection handling
-wss.on('connection', (ws) => {
-  console.log('New client connected');
-  clients.push(ws);
+wss.on('connection', (ws, req) => {
+  const sessionID = req.headers['sec-websocket-protocol'];
+
+  if (!clients[sessionID]) {
+    clients[sessionID] = [];
+  }
+  clients[sessionID].push(ws);
+
+  console.log(`New client connected: ${sessionID}`);
 
   ws.on('message', (message) => {
     console.log(`Received message: ${message}`);
-    // Broadcast to all clients
-    clients.forEach((client) => {
-      if (client !== ws && client.readyState === WebSocket.OPEN) {
+    // Broadcast to all clients associated with the session
+    clients[sessionID].forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
         client.send(message);
       }
     });
   });
 
   ws.on('close', () => {
-    console.log('Client disconnected');
-    clients = clients.filter((client) => client !== ws);
+    console.log(`Client disconnected: ${sessionID}`);
+    clients[sessionID] = clients[sessionID].filter((client) => client !== ws);
   });
 
   ws.on('error', (error) => {
@@ -75,28 +84,30 @@ wss.on('connection', (ws) => {
   });
 });
 
-// Function to broadcast a message to all WebSocket clients
-function broadcastMessage(message) {
-  clients.forEach((client) => {
-    if (client.readyState === WebSocket.OPEN) {
-      client.send(message);
-    }
-  });
+// Function to broadcast a message to all WebSocket clients associated with a session
+function broadcastMessage(sessionID, message) {
+  if (clients[sessionID]) {
+    clients[sessionID].forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  }
 }
 
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
   req.session.views = (req.session.views || 0) + 1;
-  broadcastMessage(`Session views: ${req.session.views}`);
+  broadcastMessage(req.sessionID, `Session views: ${req.session.views}`);
   res.send(`Session views: ${req.session.views}`);
 });
 
 app.get('/get-session', (req, res) => {
   if (req.session.views) {
-    broadcastMessage(`Session views: ${req.session.views}`);
+    broadcastMessage(req.sessionID, `Session views: ${req.session.views}`);
     res.send(`Session views: ${req.session.views}`);
   } else {
-    broadcastMessage('No session data found');
+    broadcastMessage(req.sessionID, 'No session data found');
     res.send('No session data found');
   }
 });
