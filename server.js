@@ -27,10 +27,7 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, 'public')));
-
-// Redirect root to index or login based on authentication
+// Redirect root to login page if not authenticated
 app.get('/', (req, res) => {
   if (req.isAuthenticated()) {
     res.sendFile(path.join(__dirname, 'public/index.html'));
@@ -43,6 +40,9 @@ app.get('/', (req, res) => {
 app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/auth', authRoutes);
+
+// Serve static files for specific routes
+app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
