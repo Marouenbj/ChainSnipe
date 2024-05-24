@@ -12,7 +12,7 @@ router.post('/login', (req, res, next) => {
     }
     if (!user) {
       console.log('Authentication failed: User not found or incorrect password');
-      return res.redirect('/login');
+      return res.redirect('/login.html');
     }
     req.logIn(user, (err) => {
       if (err) {
@@ -30,14 +30,14 @@ router.get('/dashboard', ensureAuthenticated, (req, res) => {
 });
 
 router.get('/login', (req, res) => {
-  res.send('Login page');
+  res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
   }
-  res.redirect('/login');
+  res.redirect('/login.html');
 }
 
 module.exports = router;

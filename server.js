@@ -29,6 +29,11 @@ app.use((req, res, next) => {
 // Serve static files from the "public" directory
 app.use(express.static('public'));
 
+// Redirect root to login page
+app.get('/', (req, res) => {
+  res.redirect('/login.html');
+});
+
 // Set up routes for API endpoints
 app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
@@ -46,11 +51,6 @@ app.get('/get-session', (req, res) => {
   } else {
     res.send('No session data found');
   }
-});
-
-// Redirect root to login page
-app.get('/', (req, res) => {
-  res.redirect('/login.html');
 });
 
 // Start the server on port 3000
