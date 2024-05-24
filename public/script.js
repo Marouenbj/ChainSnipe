@@ -50,16 +50,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .catch(error => console.error('Error stopping bot:', error));
   });
 
-  // Get the session ID from the cookie
-  const getCookie = (name) => {
-    const value = `; ${document.cookie}`;
-    const parts = value.split(`; ${name}=`);
-    if (parts.length === 2) return parts.pop().split(';').shift();
-  };
-
-  const sessionID = getCookie('connect.sid').split('.')[0].substring(2);
-
-  const ws = new WebSocket(`ws://${window.location.host}`, sessionID);
+  const ws = new WebSocket(`ws://${window.location.host}`);
 
   ws.onopen = () => {
     console.log('WebSocket connection opened.');
