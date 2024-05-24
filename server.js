@@ -9,7 +9,7 @@ const configRoutes = require('./routes/config');
 const botRoutes = require('./routes/bot');
 const authRoutes = require('./routes/auth');
 const path = require('path');
-const cookie = require('cookie'); // Use 'cookie' for parsing cookies
+const cookie = require('cookie');
 
 const app = express();
 const server = http.createServer(app);
@@ -28,13 +28,25 @@ app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
 
-// Middleware to log session details
+const sessionCache = new Map();
+
+function cacheSessionInfo(req, res, next) {
+  const sessionId = req.sessionID;
+  const userId = req.session.passport.user;
+
+  // Cache session and user ID
+  sessionCache.set(sessionId, userId);
+
+  next();
+}
+
+// Middleware to log session details and cache session info
 app.use((req, res, next) => {
   console.log('Checking session for request to', req.url);
   console.log(`Session ID: ${req.sessionID}`);
   console.log(`Session: ${JSON.stringify(req.session)}`);
   next();
-});
+}, cacheSessionInfo);
 
 // Redirect root to login page if not authenticated
 app.get('/', (req, res) => {
@@ -68,17 +80,14 @@ function getUserIdFromRequest(req) {
   const sessionId = cookies['connect.sid'] && cookies['connect.sid'].split('.')[0].substring(2);
   console.log('Extracted session ID:', sessionId);
 
-  return new Promise((resolve, reject) => {
-    req.sessionStore.get(sessionId, (err, session) => {
-      if (err || !session || !session.passport || !session.passport.user) {
-        console.error('Failed to get session or user:', err || 'Session or user not found');
-        return reject(err || 'Session or user not found');
-      }
-      const userId = session.passport.user;
-      console.log('Retrieved user ID from session:', userId);
-      resolve(userId);
-    });
-  });
+  // Reuse the cached session information
+  const userId = sessionCache.get(sessionId);
+  if (userId) {
+    console.log('Reusing cached user ID:', userId);
+    return Promise.resolve(userId);
+  } else {
+    return Promise.reject('Session not found in cache');
+  }
 }
 
 // WebSocket connection handling

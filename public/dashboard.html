@@ -3,28 +3,6 @@
 <head>
     <meta charset="UTF-8">
     <title>Dashboard</title>
-    <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            const ws = new WebSocket(`ws://${window.location.host}`);
-
-            ws.onopen = () => {
-                console.log('WebSocket connection opened on dashboard.');
-                ws.send('Hello from dashboard!');
-            };
-
-            ws.onmessage = (event) => {
-                console.log('WebSocket message received on dashboard:', event.data);
-            };
-
-            ws.onclose = (event) => {
-                console.log(`WebSocket connection closed on dashboard: ${event.code} - ${event.reason}`);
-            };
-
-            ws.onerror = (error) => {
-                console.error('WebSocket error on dashboard:', error);
-            };
-        });
-    </script>
 </head>
 <body>
     <h2>Welcome to your dashboard!</h2>
