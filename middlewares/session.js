@@ -2,7 +2,7 @@ const session = require('express-session');
 const MongoStore = require('connect-mongo');
 
 const sessionMiddleware = session({
-  store: MongoStore.create({ mongoUrl: process.env.MONGO_URI || 'mongodb+srv://<username>:<password>@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority' }),
+  store: MongoStore.create({ mongoUrl: 'mongodb+srv://<username>:<password>@<your-mongo-host>/<your-database>?retryWrites=true&w=majority' }),
   secret: 'your-secret-key',
   resave: false,
   saveUninitialized: false,
