@@ -2,6 +2,8 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const connectDB = require('./config/database');
 const sessionMiddleware = require('./middlewares/session');
+const configRoutes = require('./routes/config');
+const botRoutes = require('./routes/bot');
 
 const app = express();
 
@@ -18,6 +20,13 @@ app.use((req, res, next) => {
   console.log(`Session: ${JSON.stringify(req.session)}`);
   next();
 });
+
+// Serve static files from the "public" directory
+app.use(express.static('public'));
+
+// Set up routes for API endpoints
+app.use('/api/config', configRoutes);
+app.use('/api/bot', botRoutes);
 
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
