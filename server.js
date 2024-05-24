@@ -28,7 +28,7 @@ app.use((req, res, next) => {
 });
 
 // Serve static files from the "public" directory
-app.use(express.static('public'));
+app.use(express.static(path.join(__dirname, 'public'))); // Ensure this line is correct
 
 // Redirect root to login page
 app.get('/', (req, res) => {
