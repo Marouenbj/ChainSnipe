@@ -1,16 +1,19 @@
 const express = require('express');
 const bodyParser = require('body-parser');
-const { exec } = require('child_process');
-const path = require('path');
-const configRoutes = require('./routes/config');
-const botRoutes = require('./routes/bot');
-const authRoutes = require('./routes/auth');
 const connectDB = require('./config/database');
 const sessionMiddleware = require('./middlewares/session');
 const passport = require('./config/passport');
+const configRoutes = require('./routes/config');
+const botRoutes = require('./routes/bot');
+const authRoutes = require('./routes/auth');
+const path = require('path');
+const fs = require('fs');
+const http = require('http');
+const socketIo = require('socket.io');
 
 const app = express();
-let botProcess;
+const server = http.createServer(app);
+const io = socketIo(server);
 
 // Connect to MongoDB
 connectDB();
@@ -29,9 +32,6 @@ app.use((req, res, next) => {
   next();
 });
 
-// Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, 'public')));
-
 // Redirect root to login page if not authenticated
 app.get('/', (req, res) => {
   if (req.isAuthenticated()) {
@@ -41,53 +41,48 @@ app.get('/', (req, res) => {
   }
 });
 
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Set up routes for API endpoints
 app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/auth', authRoutes);
 
-// Function to start the original bot process and capture its output
-function startBot() {
-  if (botProcess) return;
-
-  console.log('Starting bot process...');
-  
-  botProcess = exec('node index.js', { cwd: __dirname });
-
-  botProcess.stdout.on('data', (data) => {
-    console.log(`stdout: ${data}`);
-  });
-
-  botProcess.stderr.on('data', (data) => {
-    console.error(`stderr: ${data}`);
-  });
-
-  botProcess.on('close', (code) => {
-    console.log(`child process exited with code ${code}`);
-    botProcess = null;
-  });
-}
-
-// Bot control routes
-app.post('/api/bot/start', (req, res) => {
-  if (botProcess) {
-    return res.status(400).send('Bot is already running');
-  }
-  startBot();
-  res.send('Bot started');
+// Example routes for testing sessions
+app.get('/set-session', (req, res) => {
+  req.session.views = (req.session.views || 0) + 1;
+  res.send(`Session views: ${req.session.views}`);
 });
 
-app.post('/api/bot/stop', (req, res) => {
-  if (!botProcess) {
-    return res.status(400).send('Bot is not running');
+app.get('/get-session', (req, res) => {
+  if (req.session.views) {
+    res.send(`Session views: ${req.session.views}`);
+  } else {
+    res.send('No session data found');
   }
-  botProcess.kill();
-  botProcess = null;
-  res.send('Bot stopped');
 });
+
+// Endpoint to fetch config.ini
+app.get('/api/config', (req, res) => {
+  const configPath = path.join(__dirname, 'config.ini');
+  fs.readFile(configPath, 'utf-8', (err, data) => {
+    if (err) {
+      return res.status(500).send('Error reading config.ini');
+    }
+    res.send(data);
+  });
+});
+
+// Capture console logs
+let ConsoleLog = console.log;
+console.log = function(...args) {
+  ConsoleLog.apply(console, args);
+  io.emit('consoleLog', args.join(' '));
+};
 
 // Start the server on port 3000
-const PORT = 3000;
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 3000;
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
