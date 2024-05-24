@@ -31,6 +31,7 @@ app.use(passport.session());
 
 // Middleware to log session details
 app.use((req, res, next) => {
+  console.log('Checking session for request to', req.url);
   console.log(`Session ID: ${req.sessionID}`);
   console.log(`Session: ${JSON.stringify(req.session)}`);
   next();
@@ -53,53 +54,69 @@ app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/auth', authRoutes);
 
-// WebSocket connection handling
-wss.on('connection', (ws, req) => {
-  // Extract user ID from session
+// Enhanced logging for request handling
+app.get('/api/config', (req, res) => {
+  console.log('Handling /api/config request');
+  const config = getConfig();
+  console.log('Fetched config:', config);
+  res.json({ config });
+});
+
+// Extract user ID from the WebSocket upgrade request
+function getUserIdFromRequest(req) {
   const cookies = cookieParser.signedCookies(req.headers.cookie, 'secret'); // Adjust 'secret' as needed
+  console.log('Extracted cookies:', cookies);
   const sessionId = cookies['connect.sid'];
-  sessionMiddleware(req, {}, async () => {
-    try {
-      const user = await new Promise((resolve, reject) => {
-        passport.deserializeUser(sessionId, (err, user) => {
-          if (err || !user) {
-            return reject(err || 'User not found');
-          }
-          resolve(user);
-        });
+  console.log('Extracted session ID:', sessionId);
+
+  return new Promise((resolve, reject) => {
+    sessionMiddleware(req, {}, () => {
+      passport.deserializeUser(sessionId, (err, user) => {
+        if (err || !user) {
+          console.error('Failed to deserialize user:', err || 'User not found');
+          return reject(err || 'User not found');
+        }
+        console.log('Deserialized user:', user);
+        resolve(user._id.toString());
       });
-
-      const userId = user._id.toString();
-      if (!clients[userId]) {
-        clients[userId] = [];
-      }
-      clients[userId].push(ws);
-
-      console.log(`New client connected: ${userId}`);
-
-      ws.on('message', (message) => {
-        console.log(`Received message from ${userId}: ${message}`);
-        // Broadcast to all clients associated with the user
-        clients[userId].forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(message);
-          }
-        });
-      });
-
-      ws.on('close', () => {
-        console.log(`Client disconnected: ${userId}`);
-        clients[userId] = clients[userId].filter((client) => client !== ws);
-      });
-
-      ws.on('error', (error) => {
-        console.error(`WebSocket error for ${userId}: ${error.message}`);
-      });
-    } catch (err) {
-      console.error(`WebSocket connection failed: ${err}`);
-      ws.close();
-    }
+    });
   });
+}
+
+// WebSocket connection handling
+wss.on('connection', async (ws, req) => {
+  try {
+    console.log('Handling WebSocket connection');
+    const userId = await getUserIdFromRequest(req);
+    if (!clients[userId]) {
+      clients[userId] = [];
+    }
+    clients[userId].push(ws);
+
+    console.log(`New client connected: ${userId}`);
+
+    ws.on('message', (message) => {
+      console.log(`Received message from ${userId}: ${message}`);
+      // Broadcast to all clients associated with the user
+      clients[userId].forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message);
+        }
+      });
+    });
+
+    ws.on('close', () => {
+      console.log(`Client disconnected: ${userId}`);
+      clients[userId] = clients[userId].filter((client) => client !== ws);
+    });
+
+    ws.on('error', (error) => {
+      console.error(`WebSocket error for ${userId}: ${error.message}`);
+    });
+  } catch (err) {
+    console.error(`WebSocket connection failed: ${err}`);
+    ws.close();
+  }
 });
 
 // Function to broadcast a message to all WebSocket clients associated with a user
