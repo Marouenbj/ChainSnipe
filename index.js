@@ -2,7 +2,6 @@ const chalk = require('chalk');
 const ethers = require('ethers');
 const fs = require('fs').promises;
 const args = require('minimist')(process.argv.slice(2));
-const { broadcastMessage, clients, wss } = require('./server.js');
 
 let ConsoleLog = console.log;
 
@@ -11,24 +10,6 @@ const { msg, config, cache, network } = require('./classes/main.js');
 
 console.clear();
 console.log(ethers);
-
-const logBotMessage = (message) => {
-    const formattedMessage = `[bot] ${message}`;
-    console.log(formattedMessage);
-
-    // Broadcast the message to all connected clients
-    for (let userId in clients) {
-      clients[userId].forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(formattedMessage);
-        }
-      });
-    }
-};
-
-msg.primary = (message) => logBotMessage(message);
-msg.error = (message) => logBotMessage(message);
-msg.success = (message) => logBotMessage(message);
 
 msg.primary('[debug::main] Loading..');
 
@@ -98,10 +79,10 @@ process.on('uncaughtException', (err, origin) => {
         process.exit();
     }
 
-    logBotMessage(chalk.hex('#2091F6').inverse('==================== [TX COMPLETED] ===================='));
-    logBotMessage(chalk.hex('#2091F6')('• ') + chalk.hex('#EBF0FA')(`From ${cache.data.addresses[config.cfg.contracts.input].symbol} (${config.cfg.transaction.amount_in} ${cache.data.addresses[config.cfg.contracts.input].symbol}) -> ${cache.data.addresses[config.cfg.contracts.output].symbol} (minimum ${network.amount_bought_unformatted} ${cache.data.addresses[config.cfg.contracts.output].symbol})`));
-    logBotMessage(chalk.hex('#2091F6')('• ') + chalk.hex('#EBF0FA')(`https://bscscan.com/tx/${receipt.logs[1].transactionHash}`));
-    logBotMessage(chalk.hex('#2091F6').inverse('========================================================\n'));
+    console.log(chalk.hex('#2091F6').inverse('==================== [TX COMPLETED] ===================='));
+    console.log(chalk.hex('#2091F6')('• ') + chalk.hex('#EBF0FA')(`From ${cache.data.addresses[config.cfg.contracts.input].symbol} (${config.cfg.transaction.amount_in} ${cache.data.addresses[config.cfg.contracts.input].symbol}) -> ${cache.data.addresses[config.cfg.contracts.output].symbol} (minimum ${network.amount_bought_unformatted} ${cache.data.addresses[config.cfg.contracts.output].symbol})`));
+    console.log(chalk.hex('#2091F6')('• ') + chalk.hex('#EBF0FA')(`https://bscscan.com/tx/${receipt.logs[1].transactionHash}`));
+    console.log(chalk.hex('#2091F6').inverse('========================================================\n'));
 
     // save cache just to be sure
     await cache.save();
