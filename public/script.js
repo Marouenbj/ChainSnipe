@@ -60,6 +60,8 @@ document.addEventListener('DOMContentLoaded', () => {
       newMessageElement.textContent = event.data.replace('[bot] ', '');
       outputDiv.appendChild(newMessageElement);
       outputDiv.scrollTop = outputDiv.scrollHeight;
+    } else {
+      console.log('Filtered out message:', event.data);
     }
   };
 
