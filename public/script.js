@@ -9,8 +9,7 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(response => response.json())
     .then(data => {
       configTextarea.value = data.config;
-    })
-    .catch(error => console.error('Error fetching config:', error));
+    });
 
   saveConfigButton.addEventListener('click', () => {
     const config = configTextarea.value;
@@ -24,8 +23,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => response.text())
       .then(message => {
         alert(message);
-      })
-      .catch(error => console.error('Error saving config:', error));
+      });
   });
 
   startBotButton.addEventListener('click', () => {
@@ -35,8 +33,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => response.text())
       .then(message => {
         alert(message);
-      })
-      .catch(error => console.error('Error starting bot:', error));
+      });
   });
 
   stopBotButton.addEventListener('click', () => {
@@ -46,8 +43,7 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => response.text())
       .then(message => {
         alert(message);
-      })
-      .catch(error => console.error('Error stopping bot:', error));
+      });
   });
 
   const ws = new WebSocket(`ws://${window.location.host}`);
@@ -58,15 +54,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
   ws.onmessage = (event) => {
     const message = event.data.trim(); // Trim to remove trailing newlines
-    console.log('WebSocket message received:', message); // Log received messages
-    const newMessageElement = document.createElement('div');
-    newMessageElement.textContent = message;
-    outputDiv.appendChild(newMessageElement);
+    const lines = message.split('\n'); // Split the message by newlines
+    lines.forEach(line => {
+      const newMessageElement = document.createElement('div');
+      newMessageElement.textContent = line;
+      outputDiv.appendChild(newMessageElement);
+    });
     outputDiv.scrollTop = outputDiv.scrollHeight;
   };
 
-  ws.onclose = (event) => {
-    console.log(`WebSocket connection closed: ${event.code} - ${event.reason}`);
+  ws.onclose = () => {
+    console.log('WebSocket connection closed.');
   };
 
   ws.onerror = (error) => {
