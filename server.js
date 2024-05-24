@@ -2,8 +2,10 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const connectDB = require('./config/database');
 const sessionMiddleware = require('./middlewares/session');
+const passport = require('./config/passport');
 const configRoutes = require('./routes/config');
 const botRoutes = require('./routes/bot');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 
@@ -13,6 +15,8 @@ connectDB();
 // Middleware
 app.use(bodyParser.json());
 app.use(sessionMiddleware);
+app.use(passport.initialize());
+app.use(passport.session());
 
 // Middleware to log session details
 app.use((req, res, next) => {
@@ -27,6 +31,7 @@ app.use(express.static('public'));
 // Set up routes for API endpoints
 app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
+app.use('/auth', authRoutes);
 
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
