@@ -1,6 +1,6 @@
 const express = require('express');
-const http = require('http'); // Ensure HTTP is used for WebSocket
-const WebSocket = require('ws'); // WebSocket library
+const http = require('http');
+const WebSocket = require('ws');
 const bodyParser = require('body-parser');
 const connectDB = require('./config/database');
 const sessionMiddleware = require('./middlewares/session');
@@ -11,8 +11,8 @@ const authRoutes = require('./routes/auth');
 const path = require('path');
 
 const app = express();
-const server = http.createServer(app); // Create HTTP server
-const wss = new WebSocket.Server({ server }); // Create WebSocket server
+const server = http.createServer(app);
+const wss = new WebSocket.Server({ server });
 
 let clients = [];
 
@@ -75,16 +75,28 @@ wss.on('connection', (ws) => {
   });
 });
 
+// Function to broadcast a message to all WebSocket clients
+function broadcastMessage(message) {
+  clients.forEach((client) => {
+    if (client.readyState === WebSocket.OPEN) {
+      client.send(message);
+    }
+  });
+}
+
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
   req.session.views = (req.session.views || 0) + 1;
+  broadcastMessage(`Session views: ${req.session.views}`);
   res.send(`Session views: ${req.session.views}`);
 });
 
 app.get('/get-session', (req, res) => {
   if (req.session.views) {
+    broadcastMessage(`Session views: ${req.session.views}`);
     res.send(`Session views: ${req.session.views}`);
   } else {
+    broadcastMessage('No session data found');
     res.send('No session data found');
   }
 });
