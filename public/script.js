@@ -53,20 +53,17 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   ws.onmessage = (event) => {
-    console.log('WebSocket message received:', event.data);
-    // Display all messages initially
-    const newMessageElement = document.createElement('div');
-    newMessageElement.textContent = event.data;
-    outputDiv.appendChild(newMessageElement);
-    outputDiv.scrollTop = outputDiv.scrollHeight;
-
-    // Add filtering for [bot] messages only after verifying all messages are displayed
-    if (event.data.startsWith('[bot]')) {
-      newMessageElement.textContent = event.data.replace('[bot] ', '');
+    const message = event.data;
+    console.log('WebSocket message received:', message);
+    
+    // Filter messages with the [bot] prefix
+    if (message.startsWith('[bot]')) {
+      const newMessageElement = document.createElement('div');
+      newMessageElement.textContent = message.replace('[bot] ', '');
       outputDiv.appendChild(newMessageElement);
       outputDiv.scrollTop = outputDiv.scrollHeight;
     } else {
-      console.log('Filtered out message:', event.data);
+      console.log('Filtered out message:', message);
     }
   };
 
