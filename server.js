@@ -9,8 +9,7 @@ const configRoutes = require('./routes/config');
 const botRoutes = require('./routes/bot');
 const authRoutes = require('./routes/auth');
 const path = require('path');
-const cookieParser = require('cookie-parser');
-const session = require('express-session');
+const cookie = require('cookie'); // Use 'cookie' for parsing cookies
 
 const app = express();
 const server = http.createServer(app);
@@ -24,7 +23,7 @@ connectDB();
 // Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(cookieParser());
+app.use(require('cookie-parser')());
 app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
@@ -64,9 +63,9 @@ app.get('/api/config', (req, res) => {
 
 // Extract user ID from the WebSocket upgrade request
 function getUserIdFromRequest(req) {
-  const cookies = cookieParser.signedCookies(req.headers.cookie, 'secret'); // Adjust 'secret' as needed
+  const cookies = cookie.parse(req.headers.cookie || '');
   console.log('Extracted cookies:', cookies);
-  const sessionId = cookies['connect.sid'];
+  const sessionId = cookies['connect.sid'] && cookies['connect.sid'].split('.')[0].substring(2);
   console.log('Extracted session ID:', sessionId);
 
   return new Promise((resolve, reject) => {
