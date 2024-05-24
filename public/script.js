@@ -53,16 +53,11 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   ws.onmessage = (event) => {
-    // Filter messages with the [bot] prefix
-    if (event.data.startsWith('[bot]')) {
-      console.log('WebSocket message received:', event.data);
-      const newMessageElement = document.createElement('div');
-      newMessageElement.textContent = event.data.replace('[bot] ', '');
-      outputDiv.appendChild(newMessageElement);
-      outputDiv.scrollTop = outputDiv.scrollHeight;
-    } else {
-      console.log('Filtered out message:', event.data);
-    }
+    console.log('WebSocket message received:', event.data);
+    const newMessageElement = document.createElement('div');
+    newMessageElement.textContent = event.data;
+    outputDiv.appendChild(newMessageElement);
+    outputDiv.scrollTop = outputDiv.scrollHeight;
   };
 
   ws.onclose = (event) => {
