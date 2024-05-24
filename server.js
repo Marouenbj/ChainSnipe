@@ -142,7 +142,7 @@ function broadcastMessage(userId, message) {
 const originalLog = console.log;
 console.log = function(message) {
   originalLog.apply(console, arguments);
-  if (typeof message === 'string' && message.startsWith('[bot]')) {
+  if (typeof message === 'string' && message.startsWith('[2024')) {
     for (let userId in clients) {
       clients[userId].forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
