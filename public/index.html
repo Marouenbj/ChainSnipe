@@ -13,14 +13,6 @@
       overflow-y: scroll;
       background-color: #f9f9f9;
     }
-    #console-output {
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-top: 10px;
-      height: 200px;
-      overflow-y: scroll;
-      background-color: #e9e9e9;
-    }
   </style>
 </head>
 <body>
@@ -32,33 +24,6 @@
   <button id="stopBot">Stop Bot</button>
   <div id="output"></div>
 
-  <h2>Console Output</h2>
-  <div id="console-output"></div>
-
-  <script>
-    document.getElementById('saveConfig').addEventListener('click', function() {
-      // Your existing save config logic
-    });
-
-    document.getElementById('startBot').addEventListener('click', function() {
-      // Your existing start bot logic
-    });
-
-    document.getElementById('stopBot').addEventListener('click', function() {
-      // Your existing stop bot logic
-    });
-
-    const consoleOutput = document.getElementById('console-output');
-    const eventSource = new EventSource('/logs');
-
-    eventSource.onmessage = function(event) {
-      consoleOutput.textContent += event.data + '\n';
-    };
-
-    eventSource.onerror = function(event) {
-      consoleOutput.textContent += 'Error: Unable to connect to logs stream.\n';
-    };
-  </script>
   <script src="script.js"></script>
 </body>
 </html>
