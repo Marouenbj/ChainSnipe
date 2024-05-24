@@ -6,7 +6,7 @@ const passport = require('./config/passport');
 const configRoutes = require('./routes/config');
 const botRoutes = require('./routes/bot');
 const authRoutes = require('./routes/auth');
-const path = require('path'); // Import the path module
+const path = require('path');
 
 const app = express();
 
@@ -16,7 +16,7 @@ connectDB();
 // Middleware
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(sessionMiddleware); // Apply session middleware before Passport.js
+app.use(sessionMiddleware);
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -28,11 +28,11 @@ app.use((req, res, next) => {
 });
 
 // Serve static files from the "public" directory
-app.use(express.static(path.join(__dirname, 'public'))); // Ensure this line is correct
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Redirect root to login page
 app.get('/', (req, res) => {
-  res.redirect('/login.html');
+  res.redirect('/auth/login.html');
 });
 
 // Set up routes for API endpoints
