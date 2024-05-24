@@ -39,7 +39,12 @@ router.get('/logout', (req, res) => {
     if (err) {
       return next(err);
     }
-    res.redirect('/login.html');
+    req.session.destroy((err) => {
+      if (err) {
+        return next(err);
+      }
+      res.redirect('/login.html');
+    });
   });
 });
 
