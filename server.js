@@ -1,4 +1,6 @@
 const express = require('express');
+const http = require('http'); // Ensure HTTP is used for WebSocket
+const WebSocket = require('ws'); // WebSocket library
 const bodyParser = require('body-parser');
 const connectDB = require('./config/database');
 const sessionMiddleware = require('./middlewares/session');
@@ -9,6 +11,10 @@ const authRoutes = require('./routes/auth');
 const path = require('path');
 
 const app = express();
+const server = http.createServer(app); // Create HTTP server
+const wss = new WebSocket.Server({ server }); // Create WebSocket server
+
+let clients = [];
 
 // Connect to MongoDB
 connectDB();
@@ -44,6 +50,31 @@ app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/auth', authRoutes);
 
+// WebSocket connection handling
+wss.on('connection', (ws) => {
+  console.log('New client connected');
+  clients.push(ws);
+
+  ws.on('message', (message) => {
+    console.log(`Received message: ${message}`);
+    // Broadcast to all clients
+    clients.forEach((client) => {
+      if (client !== ws && client.readyState === WebSocket.OPEN) {
+        client.send(message);
+      }
+    });
+  });
+
+  ws.on('close', () => {
+    console.log('Client disconnected');
+    clients = clients.filter((client) => client !== ws);
+  });
+
+  ws.on('error', (error) => {
+    console.error(`WebSocket error: ${error.message}`);
+  });
+});
+
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
   req.session.views = (req.session.views || 0) + 1;
@@ -60,6 +91,6 @@ app.get('/get-session', (req, res) => {
 
 // Start the server on port 3000
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
