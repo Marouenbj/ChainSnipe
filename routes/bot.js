@@ -3,7 +3,6 @@ const router = express.Router();
 const { exec } = require('child_process');
 let botProcess;
 
-// Middleware to ensure the user is authenticated
 function ensureAuthenticated(req, res, next) {
   if (req.isAuthenticated()) {
     return next();
@@ -17,9 +16,10 @@ router.post('/start', ensureAuthenticated, (req, res) => {
     return res.status(400).send('Bot is already running');
   }
 
-  botProcess = exec('node index.js', (error, stdout, stderr) => {
+  botProcess = exec('PORT=3001 node index.js', (error, stdout, stderr) => {
     if (error) {
       console.error(`exec error: ${error}`);
+      res.status(500).send(`Error starting bot: ${error.message}`);
       return;
     }
     console.log(`stdout: ${stdout}`);

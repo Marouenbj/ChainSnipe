@@ -6,15 +6,16 @@ const { sendLog } = require('./server'); // Import the sendLog function
 
 const { msg, config, cache, network } = require('./classes/main.js');
 
+const PORT = process.env.PORT || 3000;
+
 console.clear();
 console.log(ethers);
 
 function logMessage(level, message) {
-    const logMessage = typeof message === 'object' ? JSON.stringify(message) : message;
-    console.log(logMessage);
-    sendLog(logMessage);
-  }
-  
+  const logMessage = typeof message === 'object' ? JSON.stringify(message) : message;
+  console.log(logMessage);
+  sendLog(logMessage);
+}
 
 msg.primary = (text) => logMessage('primary', chalk.blue(text));
 msg.success = (text) => logMessage('success', chalk.green(text));
