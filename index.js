@@ -10,9 +10,11 @@ console.clear();
 console.log(ethers);
 
 function logMessage(level, message) {
-  console.log(message);
-  sendLog(message);
-}
+    const logMessage = typeof message === 'object' ? JSON.stringify(message) : message;
+    console.log(logMessage);
+    sendLog(logMessage);
+  }
+  
 
 msg.primary = (text) => logMessage('primary', chalk.blue(text));
 msg.success = (text) => logMessage('success', chalk.green(text));
