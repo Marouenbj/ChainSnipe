@@ -36,13 +36,13 @@ app.get('/', (req, res) => {
   }
 });
 
+// Serve static files from the "public" directory
+app.use(express.static(path.join(__dirname, 'public')));
+
 // Set up routes for API endpoints
 app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/auth', authRoutes);
-
-// Serve static files for specific routes
-app.use('/public', express.static(path.join(__dirname, 'public')));
 
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
