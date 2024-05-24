@@ -47,4 +47,19 @@ app.use('/auth', authRoutes);
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
   req.session.views = (req.session.views || 0) + 1;
-  res.send(`Session views: ${
+  res.send(`Session views: ${req.session.views}`);
+});
+
+app.get('/get-session', (req, res) => {
+  if (req.session.views) {
+    res.send(`Session views: ${req.session.views}`);
+  } else {
+    res.send('No session data found');
+  }
+});
+
+// Start the server on port 3000
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
