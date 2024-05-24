@@ -138,6 +138,19 @@ function broadcastMessage(userId, message) {
   }
 }
 
+// Redirect console.log to WebSocket clients
+const originalLog = console.log;
+console.log = function(message) {
+  originalLog.apply(console, arguments);
+  for (let userId in clients) {
+    clients[userId].forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message.toString());
+      }
+    });
+  }
+};
+
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
   req.session.views = (req.session.views || 0) + 1;

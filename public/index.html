@@ -24,6 +24,62 @@
   <button id="stopBot">Stop Bot</button>
   <div id="output"></div>
 
-  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', () => {
+      const outputDiv = document.getElementById('output');
+      const ws = new WebSocket(`ws://${window.location.host}`);
+
+      ws.onopen = () => {
+        console.log('WebSocket connection opened.');
+      };
+
+      ws.onmessage = (event) => {
+        console.log('WebSocket message received:', event.data);
+        const newMessageElement = document.createElement('div');
+        newMessageElement.textContent = event.data;
+        outputDiv.appendChild(newMessageElement);
+        outputDiv.scrollTop = outputDiv.scrollHeight;
+      };
+
+      ws.onclose = (event) => {
+        console.log(`WebSocket connection closed: ${event.code} - ${event.reason}`);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+      };
+
+      document.getElementById('saveConfig').addEventListener('click', () => {
+        const config = document.getElementById('config').value;
+        fetch('/api/config', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ config })
+        })
+        .then(response => response.text())
+        .then(data => {
+          console.log(data);
+        });
+      });
+
+      document.getElementById('startBot').addEventListener('click', () => {
+        fetch('/api/bot/start', { method: 'POST' })
+        .then(response => response.text())
+        .then(data => {
+          console.log(data);
+        });
+      });
+
+      document.getElementById('stopBot').addEventListener('click', () => {
+        fetch('/api/bot/stop', { method: 'POST' })
+        .then(response => response.text())
+        .then(data => {
+          console.log(data);
+        });
+      });
+    });
+  </script>
 </body>
 </html>
