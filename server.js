@@ -13,8 +13,9 @@ const app = express();
 connectDB();
 
 // Middleware
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
-app.use(sessionMiddleware);
+app.use(sessionMiddleware); // Apply session middleware before Passport.js
 app.use(passport.initialize());
 app.use(passport.session());
 
@@ -45,6 +46,11 @@ app.get('/get-session', (req, res) => {
   } else {
     res.send('No session data found');
   }
+});
+
+// Redirect root to login page
+app.get('/', (req, res) => {
+  res.redirect('/login.html');
 });
 
 // Start the server on port 3000
