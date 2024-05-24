@@ -1,6 +1,6 @@
 const express = require('express');
 const passport = require('passport');
-const path = require('path'); // Ensure path module is imported
+const path = require('path');
 
 const router = express.Router();
 
@@ -21,17 +21,17 @@ router.post('/login', (req, res, next) => {
         return next(err);
       }
       console.log('User logged in successfully');
-      return res.redirect('/dashboard');
+      return res.redirect('/dashboard.html');
     });
   })(req, res, next);
 });
 
-router.get('/dashboard', ensureAuthenticated, (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/dashboard.html')); // Serve the dashboard.html file
+router.get('/dashboard.html', ensureAuthenticated, (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/dashboard.html'));
 });
 
-router.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/login.html')); // Serve the login.html file
+router.get('/login.html', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
 router.get('/logout', (req, res) => {
