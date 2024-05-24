@@ -53,18 +53,18 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   ws.onmessage = (event) => {
-    const message = event.data.trim(); // Trim to remove trailing newlines
-    const lines = message.split('\n'); // Split the message by newlines
-    lines.forEach(line => {
+    // Filter messages with the [bot] prefix
+    if (event.data.startsWith('[bot]')) {
+      console.log('WebSocket message received:', event.data);
       const newMessageElement = document.createElement('div');
-      newMessageElement.textContent = line;
+      newMessageElement.textContent = event.data.replace('[bot] ', '');
       outputDiv.appendChild(newMessageElement);
-    });
-    outputDiv.scrollTop = outputDiv.scrollHeight;
+      outputDiv.scrollTop = outputDiv.scrollHeight;
+    }
   };
 
-  ws.onclose = () => {
-    console.log('WebSocket connection closed.');
+  ws.onclose = (event) => {
+    console.log(`WebSocket connection closed: ${event.code} - ${event.reason}`);
   };
 
   ws.onerror = (error) => {
