@@ -11,16 +11,16 @@ const PORT = process.env.PORT || 3000;
 console.clear();
 console.log(ethers);
 
-function logMessage(level, message) {
-  const logMessage = typeof message === 'object' ? JSON.stringify(message) : message;
-  console.log(logMessage);
-  sendLog(logMessage);
+function logMessage(message) {
+  console.log(message);
+  sendLog(message);
 }
 
-msg.primary = (text) => logMessage('primary', chalk.blue(text));
-msg.success = (text) => logMessage('success', chalk.green(text));
-msg.warning = (text) => logMessage('warning', chalk.yellow(text));
-msg.error = (text) => logMessage('error', chalk.red(text));
+// Replacing msg methods to use the unified logging method
+msg.primary = (text) => logMessage(chalk.blue(text));
+msg.success = (text) => logMessage(chalk.green(text));
+msg.warning = (text) => logMessage(chalk.yellow(text));
+msg.error = (text) => logMessage(chalk.red(text));
 
 // Error handler
 process.on('uncaughtException', (err, origin) => {
