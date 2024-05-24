@@ -69,15 +69,14 @@ function getUserIdFromRequest(req) {
   console.log('Extracted session ID:', sessionId);
 
   return new Promise((resolve, reject) => {
-    sessionMiddleware(req, {}, () => {
-      passport.deserializeUser(sessionId, (err, user) => {
-        if (err || !user) {
-          console.error('Failed to deserialize user:', err || 'User not found');
-          return reject(err || 'User not found');
-        }
-        console.log('Deserialized user:', user);
-        resolve(user._id.toString());
-      });
+    req.sessionStore.get(sessionId, (err, session) => {
+      if (err || !session || !session.passport || !session.passport.user) {
+        console.error('Failed to get session or user:', err || 'Session or user not found');
+        return reject(err || 'Session or user not found');
+      }
+      const userId = session.passport.user;
+      console.log('Retrieved user ID from session:', userId);
+      resolve(userId);
     });
   });
 }
