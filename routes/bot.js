@@ -17,7 +17,14 @@ router.post('/start', ensureAuthenticated, (req, res) => {
     return res.status(400).send('Bot is already running');
   }
 
-  botProcess = exec('node index.js');
+  botProcess = exec('node index.js', (error, stdout, stderr) => {
+    if (error) {
+      console.error(`exec error: ${error}`);
+      return;
+    }
+    console.log(`stdout: ${stdout}`);
+    console.error(`stderr: ${stderr}`);
+  });
 
   botProcess.on('close', (code) => {
     console.log(`child process exited with code ${code}`);
