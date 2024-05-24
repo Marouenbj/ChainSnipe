@@ -30,9 +30,13 @@ app.use((req, res, next) => {
 // Serve static files from the "public" directory
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Redirect root to login page
+// Redirect root to index or login based on authentication
 app.get('/', (req, res) => {
-  res.redirect('/auth/login.html');
+  if (req.isAuthenticated()) {
+    res.sendFile(path.join(__dirname, 'public/index.html'));
+  } else {
+    res.redirect('/auth/login.html');
+  }
 });
 
 // Set up routes for API endpoints
