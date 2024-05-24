@@ -31,12 +31,13 @@ app.use(passport.session());
 const sessionCache = new Map();
 
 function cacheSessionInfo(req, res, next) {
-  const sessionId = req.sessionID;
-  const userId = req.session.passport.user;
+  if (req.session && req.session.passport && req.session.passport.user) {
+    const sessionId = req.sessionID;
+    const userId = req.session.passport.user;
 
-  // Cache session and user ID
-  sessionCache.set(sessionId, userId);
-
+    // Cache session and user ID
+    sessionCache.set(sessionId, userId);
+  }
   next();
 }
 
