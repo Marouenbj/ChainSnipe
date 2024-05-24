@@ -77,13 +77,6 @@ app.get('/get-session', (req, res) => {
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-}).on('error', (err) => {
-  if (err.code === 'EADDRINUSE') {
-    console.error(`Port ${PORT} is already in use`);
-    process.exit(1); // Exit the process with a failure code
-  } else {
-    throw err;
-  }
 });
 
 // Function to send logs to all connected clients
