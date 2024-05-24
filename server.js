@@ -138,40 +138,14 @@ function broadcastMessage(userId, message) {
   }
 }
 
-// Redirect console.log to WebSocket clients without filtering
-const originalLog = console.log;
-console.log = function(message) {
-  originalLog.apply(console, arguments);
-  for (let userId in clients) {
-    clients[userId].forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message.toString());
-      }
-    });
-  }
-};
-
-// Example routes for testing sessions
-app.get('/set-session', (req, res) => {
-  req.session.views = (req.session.views || 0) + 1;
-  const userId = req.session.passport.user;
-  broadcastMessage(userId, `Session views: ${req.session.views}`);
-  res.send(`Session views: ${req.session.views}`);
-});
-
-app.get('/get-session', (req, res) => {
-  const userId = req.session.passport.user;
-  if (req.session.views) {
-    broadcastMessage(userId, `Session views: ${req.session.views}`);
-    res.send(`Session views: ${req.session.views}`);
-  } else {
-    broadcastMessage(userId, 'No session data found');
-    res.send('No session data found');
-  }
-});
-
 // Start the server on port 3000
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
   console.log(`[bot] Server is running on port ${PORT}`);
 });
+
+module.exports = {
+  broadcastMessage,
+  clients,
+  wss
+};
