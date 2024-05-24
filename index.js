@@ -1,5 +1,6 @@
 const chalk = require('chalk');
 const ethers = require('ethers');
+const WebSocket = require('ws');
 const fs = require('fs').promises;
 const args = require('minimist')(process.argv.slice(2));
 
@@ -11,8 +12,22 @@ const { msg, config, cache, network } = require('./classes/main.js');
 console.clear();
 console.log(ethers);
 
+const ws = new WebSocket(`ws://${process.env.HOST || 'localhost'}:${process.env.PORT || 3000}`);
+
+ws.on('open', () => {
+    console.log('WebSocket connection opened.');
+});
+
+ws.on('error', (error) => {
+    console.error('WebSocket error:', error);
+});
+
 const logBotMessage = (message) => {
-    console.log(`[bot] ${message}`);
+    const formattedMessage = `[bot] ${message}`;
+    console.log(formattedMessage);
+    if (ws.readyState === WebSocket.OPEN) {
+        ws.send(formattedMessage);
+    }
 };
 
 msg.primary = (message) => logBotMessage(message);

@@ -138,18 +138,16 @@ function broadcastMessage(userId, message) {
   }
 }
 
-// Redirect console.log to WebSocket clients with filtering
+// Redirect console.log to WebSocket clients without filtering
 const originalLog = console.log;
 console.log = function(message) {
   originalLog.apply(console, arguments);
-  if (typeof message === 'string' && message.startsWith('[2024')) {
-    for (let userId in clients) {
-      clients[userId].forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(message.toString());
-        }
-      });
-    }
+  for (let userId in clients) {
+    clients[userId].forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.send(message.toString());
+      }
+    });
   }
 };
 
