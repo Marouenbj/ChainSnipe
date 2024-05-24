@@ -138,16 +138,18 @@ function broadcastMessage(userId, message) {
   }
 }
 
-// Redirect console.log to WebSocket clients
+// Redirect console.log to WebSocket clients with filtering
 const originalLog = console.log;
 console.log = function(message) {
   originalLog.apply(console, arguments);
-  for (let userId in clients) {
-    clients[userId].forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(message.toString());
-      }
-    });
+  if (message.startsWith('[bot]')) {
+    for (let userId in clients) {
+      clients[userId].forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(message.toString());
+        }
+      });
+    }
   }
 };
 
@@ -173,5 +175,5 @@ app.get('/get-session', (req, res) => {
 // Start the server on port 3000
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
+  console.log(`[bot] Server is running on port ${PORT}`);
 });
