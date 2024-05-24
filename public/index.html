@@ -3,27 +3,23 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Bot Config</title>
-  <style>
-    #output {
-      border: 1px solid #ccc;
-      padding: 10px;
-      margin-top: 10px;
-      height: 200px;
-      overflow-y: scroll;
-      background-color: #f9f9f9;
-    }
-  </style>
+  <title>ChainSnipe</title>
 </head>
 <body>
-  <h1>Bot Config</h1>
-  <textarea id="config" rows="20" cols="80"></textarea>
-  <br>
-  <button id="saveConfig">Save Config</button>
-  <button id="startBot">Start Bot</button>
-  <button id="stopBot">Stop Bot</button>
-  <div id="output"></div>
+  <h1>ChainSnipe Console</h1>
+  <pre id="console-output"></pre>
 
-  <script src="script.js"></script>
+  <script>
+    const consoleOutput = document.getElementById('console-output');
+
+    const eventSource = new EventSource('/logs');
+    eventSource.onmessage = function(event) {
+      consoleOutput.textContent += event.data + '\n';
+    };
+
+    eventSource.onerror = function(event) {
+      consoleOutput.textContent += 'Error: Unable to connect to logs stream.\n';
+    };
+  </script>
 </body>
 </html>

@@ -10,6 +10,8 @@ const path = require('path');
 
 const app = express();
 
+let clients = [];
+
 // Connect to MongoDB
 connectDB();
 
@@ -44,6 +46,19 @@ app.use('/api/config', configRoutes);
 app.use('/api/bot', botRoutes);
 app.use('/auth', authRoutes);
 
+// SSE endpoint for real-time logs
+app.get('/logs', (req, res) => {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  clients.push(res);
+
+  req.on('close', () => {
+    clients = clients.filter(client => client !== res);
+  });
+});
+
 // Example routes for testing sessions
 app.get('/set-session', (req, res) => {
   req.session.views = (req.session.views || 0) + 1;
@@ -63,3 +78,10 @@ const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
+
+// Function to send logs to all connected clients
+function sendLog(message) {
+  clients.forEach(client => client.write(`data: ${message}\n\n`));
+}
+
+module.exports = { sendLog };
