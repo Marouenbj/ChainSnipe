@@ -1,5 +1,6 @@
 const express = require('express');
 const passport = require('passport');
+const path = require('path'); // Import the path module
 
 const router = express.Router();
 
@@ -30,7 +31,7 @@ router.get('/dashboard', ensureAuthenticated, (req, res) => {
 });
 
 router.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/login.html'));
+  res.sendFile(path.join(__dirname, '../public/login.html')); // Serve the login.html file
 });
 
 function ensureAuthenticated(req, res, next) {

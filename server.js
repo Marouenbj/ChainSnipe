@@ -6,6 +6,7 @@ const passport = require('./config/passport');
 const configRoutes = require('./routes/config');
 const botRoutes = require('./routes/bot');
 const authRoutes = require('./routes/auth');
+const path = require('path'); // Import the path module
 
 const app = express();
 
