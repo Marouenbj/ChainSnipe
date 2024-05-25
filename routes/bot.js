@@ -1,114 +1,40 @@
-const chalk = require('chalk');
-const ethers = require('ethers');
-const fs = require('fs').promises;
-const args = require('minimist')(process.argv.slice(2));
-const { broadcastMessage, clients, wss } = require('./server.js');
+const express = require('express');
+const router = express.Router();
+const { exec } = require('child_process');
+let botProcess;
 
-let ConsoleLog = console.log;
+// Middleware to ensure the user is authenticated
+function ensureAuthenticated(req, res, next) {
+  if (req.isAuthenticated()) {
+    return next();
+  }
+  res.status(401).send('Unauthorized');
+}
 
-// main classes
-const { msg, config, cache, network } = require('./classes/main.js');
+// Start the bot process
+router.post('/start', ensureAuthenticated, (req, res) => {
+  if (botProcess) {
+    return res.status(400).send('Bot is already running');
+  }
 
-console.clear();
-console.log(ethers);
+  botProcess = exec('node index.js');
 
-const logBotMessage = (message) => {
-    const formattedMessage = `[bot] ${message}`;
-    console.log(formattedMessage);
+  botProcess.on('close', (code) => {
+    console.log(`child process exited with code ${code}`);
+    botProcess = null;
+  });
 
-    // Broadcast the message to all connected clients
-    for (let userId in clients) {
-      clients[userId].forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.send(formattedMessage);
-        }
-      });
-    }
-};
-
-msg.primary = (message) => logBotMessage(message);
-msg.error = (message) => logBotMessage(message);
-msg.success = (message) => logBotMessage(message);
-
-msg.primary('[debug::main] Loading..');
-
-// error handler
-process.on('uncaughtException', (err, origin) => {
-    msg.error(`[error::process] Exception: ${err}`);
-    process.exit();
+  res.send('Bot started');
 });
 
-// main
-(async () => {
-    // load cache
-    await cache.load('cache.json');
+// Stop the bot process
+router.post('/stop', ensureAuthenticated, (req, res) => {
+  if (!botProcess) {
+    return res.status(400).send('Bot is not running');
+  }
+  botProcess.kill();
+  botProcess = null;
+  res.send('Bot stopped');
+});
 
-    // load config using our loaded cache
-    await config.load('config.ini');
-
-    if(!network.isETH(config.cfg.contracts.input)) {
-        msg.error(`[error::main] The free version of the bot can only use the BNB pair.`);
-        process.exit();
-    }
-
-    // initialize our network using a config.
-    await network.load();
-
-    // prepare network for transactions
-    await network.prepare();
-
-    // print debug info
-    console.clear();
-
-    msg.primary('[debug::main] ChainSnipe v1 has been started.');
-
-    // balance check
-    if(network.bnb_balance == 0) {
-        msg.error(`[error::init] You don't have any BNB in your account. (used for gas fee)`);
-        process.exit();
-    }
-
-    // check if has enough input balance
-    if((network.input_balance < config.cfg.transaction.amount_in_formatted)) {
-        msg.error(`[error::init] You don't have enough input balance for this transaction.`);
-        process.exit();
-    }
-
-    // fetch pair
-    let pair = await network.getPair(config.cfg.contracts.input, config.cfg.contracts.output);
-
-    msg.primary("[debug::main] Pair address: " + JSON.stringify(pair) + ".");
-
-    // get liquidity
-    let liquidity = await network.getLiquidity(pair);
-
-    msg.primary(`[debug::main] Liquidity found: ${liquidity} ${cache.data.addresses[config.cfg.contracts.input].symbol}.\n`);
-
-    // get starting tick
-    let startingTick = Math.floor(new Date().getTime() / 1000);
-    
-    //purchase token [bnb -> token (through bnb)]
-    let receipt = await network.transactToken(
-        config.cfg.contracts.input, 
-        config.cfg.contracts.output
-    );
-
-    if(receipt == null) {
-        msg.error('[error::main] Could not retrieve receipt from buy tx.');
-        process.exit();
-    }
-
-    logBotMessage(chalk.hex('#2091F6').inverse('==================== [TX COMPLETED] ===================='));
-    logBotMessage(chalk.hex('#2091F6')('• ') + chalk.hex('#EBF0FA')(`From ${cache.data.addresses[config.cfg.contracts.input].symbol} (${config.cfg.transaction.amount_in} ${cache.data.addresses[config.cfg.contracts.input].symbol}) -> ${cache.data.addresses[config.cfg.contracts.output].symbol} (minimum ${network.amount_bought_unformatted} ${cache.data.addresses[config.cfg.contracts.output].symbol})`));
-    logBotMessage(chalk.hex('#2091F6')('• ') + chalk.hex('#EBF0FA')(`https://bscscan.com/tx/${receipt.logs[1].transactionHash}`));
-    logBotMessage(chalk.hex('#2091F6').inverse('========================================================\n'));
-
-    // save cache just to be sure
-    await cache.save();
-
-    msg.success(`Finished in ${((Math.floor(new Date().getTime() / 1000)) - startingTick)} seconds.`);
-
-    process.exit();
-})();
-
-setInterval(() => {}, 1 << 30);
+module.exports = router;
