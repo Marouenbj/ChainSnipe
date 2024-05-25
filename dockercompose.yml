@@ -9,6 +9,15 @@ services:
       - MONGO_URI=mongodb+srv://admin:0zeJULpHFMKmkmQ2@chainsnipe.xp3wetj.mongodb.net/test?retryWrites=true&w=majority&appName=ChainSnipe
     depends_on:
       - mongo
+    deploy:
+      replicas: 3  # Set the number of replicas to start with
+      update_config:
+        parallelism: 2
+        delay: 10s
+      restart_policy:
+        condition: on-failure
+    networks:
+      - app-network
 
   mongo:
     image: mongo:latest
@@ -16,6 +25,12 @@ services:
       - "27017:27017"
     volumes:
       - mongo-data:/data/db
+    networks:
+      - app-network
 
 volumes:
   mongo-data:
+
+networks:
+  app-network:
+    driver: bridge
