@@ -138,7 +138,7 @@ function broadcastMessage(userId, message) {
   }
 }
 
-// Redirect console.log to WebSocket clients without filtering
+// Redirect console.log to WebSocket clients
 const originalLog = console.log;
 console.log = function(message) {
   originalLog.apply(console, arguments);
@@ -173,5 +173,5 @@ app.get('/get-session', (req, res) => {
 // Start the server on port 3000
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, () => {
-  console.log(`[bot] Server is running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
