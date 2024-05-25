@@ -9,7 +9,8 @@ document.addEventListener('DOMContentLoaded', () => {
     .then(response => response.json())
     .then(data => {
       configTextarea.value = data.config;
-    });
+    })
+    .catch(error => console.error('Error fetching config:', error));
 
   saveConfigButton.addEventListener('click', () => {
     const config = configTextarea.value;
@@ -23,7 +24,8 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => response.text())
       .then(message => {
         alert(message);
-      });
+      })
+      .catch(error => console.error('Error saving config:', error));
   });
 
   startBotButton.addEventListener('click', () => {
@@ -33,7 +35,8 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => response.text())
       .then(message => {
         alert(message);
-      });
+      })
+      .catch(error => console.error('Error starting bot:', error));
   });
 
   stopBotButton.addEventListener('click', () => {
@@ -43,7 +46,8 @@ document.addEventListener('DOMContentLoaded', () => {
       .then(response => response.text())
       .then(message => {
         alert(message);
-      });
+      })
+      .catch(error => console.error('Error stopping bot:', error));
   });
 
   const ws = new WebSocket(`ws://${window.location.host}`);
@@ -53,9 +57,10 @@ document.addEventListener('DOMContentLoaded', () => {
   };
 
   ws.onmessage = (event) => {
-    console.log('WebSocket message received:', event.data);
+    const message = event.data.trim(); // Trim to remove trailing newlines
+    console.log('WebSocket message received:', message); // Log received messages
     const newMessageElement = document.createElement('div');
-    newMessageElement.textContent = event.data;
+    newMessageElement.textContent = message;
     outputDiv.appendChild(newMessageElement);
     outputDiv.scrollTop = outputDiv.scrollHeight;
   };
