@@ -139,18 +139,22 @@ function broadcastMessage(userId, message) {
   }
 }
 
-// Redirect console.log to WebSocket clients with message counter
+// Redirect console.log to WebSocket clients with message counter and filter for bot messages
 const originalLog = console.log;
 console.log = function(message) {
-  messageCounter++; // Increment message counter
-  const numberedMessage = `Message ${messageCounter}: ${message}`;
-  originalLog.apply(console, [numberedMessage]);
-  for (let userId in clients) {
-    clients[userId].forEach((client) => {
-      if (client.readyState === WebSocket.OPEN) {
-        client.send(numberedMessage);
-      }
-    });
+  if (message.includes('[bot]')) {
+    messageCounter++;
+    const numberedMessage = `Message ${messageCounter}: ${message}`;
+    originalLog.apply(console, [numberedMessage]);
+    for (let userId in clients) {
+      clients[userId].forEach((client) => {
+        if (client.readyState === WebSocket.OPEN) {
+          client.send(numberedMessage);
+        }
+      });
+    }
+  } else {
+    originalLog.apply(console, arguments);
   }
 };
 
