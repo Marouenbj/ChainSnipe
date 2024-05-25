@@ -143,13 +143,12 @@ function broadcastMessage(userId, message) {
 const originalLog = console.log;
 console.log = function(message) {
   if (message.includes('[bot]')) {
-    messageCounter++;
-    const numberedMessage = `Message ${messageCounter}: ${message}`;
-    originalLog.apply(console, [numberedMessage]);
+    const filteredMessage = `${message}`;
+    originalLog.apply(console, [filteredMessage]);
     for (let userId in clients) {
       clients[userId].forEach((client) => {
         if (client.readyState === WebSocket.OPEN) {
-          client.send(numberedMessage);
+          client.send(filteredMessage);
         }
       });
     }
